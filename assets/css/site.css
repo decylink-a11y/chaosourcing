@@ -588,7 +588,6 @@ img, video {
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  background-image: url("../images/pattern.jpg");
   background-position: center;
   background-size: cover;
   border-radius: var(--radius);

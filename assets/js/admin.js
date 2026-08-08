@@ -2,6 +2,18 @@
   var bound = false;
   var state = { leads: [], quotes: [] };
 
+  function getToken() {
+    return window.sessionStorage ? window.sessionStorage.getItem("globalroots_crm_admin") || "" : "";
+  }
+
+  function requireLogin() {
+    var hasToken = !!getToken();
+    document.getElementById("adminLogin").hidden = hasToken;
+    document.querySelector(".admin-header").hidden = !hasToken;
+    document.querySelector(".admin-body").hidden = !hasToken;
+    if (!hasToken) document.getElementById("adminPassword").focus();
+  }
+
   function getLang() {
     return localStorage.getItem("site_lang") || document.documentElement.lang || "en";
   }
@@ -128,6 +140,10 @@
   }
 
   function loadAndRender() {
+    if (!getToken()) {
+      requireLogin();
+      return;
+    }
     var localLeads = window.CRM.load("leads");
     var localQuotes = window.CRM.load("quotes");
     Promise.all([
@@ -193,6 +209,28 @@
   }
 
   function bindEvents() {
+    document.getElementById("adminLoginForm").addEventListener("submit", function (event) {
+      event.preventDefault();
+      var password = document.getElementById("adminPassword").value;
+      window.CRM.loginAdmin(password).then(function () {
+        document.getElementById("adminLoginError").hidden = true;
+        requireLogin();
+        loadAndRender();
+      }).catch(function () {
+        document.getElementById("adminLoginError").hidden = false;
+        document.getElementById("adminPassword").value = "";
+        document.getElementById("adminPassword").focus();
+      });
+    });
+
+    document.getElementById("logoutAdmin").addEventListener("click", function () {
+      window.CRM.logoutAdmin();
+      state.leads = [];
+      state.quotes = [];
+      render();
+      requireLogin();
+    });
+
     document.querySelectorAll(".admin-tab").forEach(function (tab) {
       tab.addEventListener("click", function () {
         document.querySelectorAll(".admin-tab").forEach(function (item) { item.classList.remove("active"); });
@@ -276,6 +314,7 @@
       bindEvents();
       bound = true;
     }
-    loadAndRender();
+    requireLogin();
+    if (getToken()) loadAndRender();
   };
 })();

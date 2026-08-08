@@ -267,11 +267,23 @@
   </main>
 
   <section class="admin-shell" id="adminView" hidden>
+    <div class="container admin-login" id="adminLogin" hidden>
+      <form class="quote-form admin-form" id="adminLoginForm">
+        <h2 data-i18n="admin.loginTitle">输入后台密码</h2>
+        <label>
+          <span data-i18n="admin.loginPassword">后台密码</span>
+          <input id="adminPassword" type="password" autocomplete="current-password" required>
+        </label>
+        <button class="btn btn-primary" type="submit" data-i18n="admin.loginButton">进入后台</button>
+        <p class="admin-login-error" id="adminLoginError" role="status" hidden data-i18n="admin.loginError">密码错误，请重试。</p>
+      </form>
+    </div>
     <header class="admin-header">
       <div class="container admin-header-inner">
         <a class="btn btn-ghost btn-small" href="#home" data-i18n="admin.back">返回网站</a>
         <h1 data-i18n="admin.title">客户管理后台</h1>
         <div class="admin-actions">
+          <button class="btn btn-secondary btn-small" id="logoutAdmin" type="button" data-i18n="admin.logout">退出登录</button>
           <button class="btn btn-secondary btn-small" id="exportCsv" type="button" data-i18n="admin.export">导出 CSV</button>
           <button class="btn btn-secondary btn-small" id="refreshAdmin" type="button" data-i18n="admin.refresh">刷新</button>
         </div>

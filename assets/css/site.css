@@ -1166,6 +1166,21 @@ textarea {
   background: var(--paper);
 }
 
+.admin-login {
+  max-width: 560px;
+  padding-top: 9vh;
+}
+
+.admin-login .quote-form {
+  margin: 0 auto;
+}
+
+.admin-login-error {
+  margin-top: 14px;
+  color: #b42318;
+  font-weight: 600;
+}
+
 .admin-header {
   position: sticky;
   top: 0;

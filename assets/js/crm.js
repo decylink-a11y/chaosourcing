@@ -1,5 +1,6 @@
 (function (root) {
   var PREFIX = "globalroots_crm_";
+  var ADMIN_KEY = "globalroots_crm_admin";
 
   function load(kind) {
     try {
@@ -77,11 +78,32 @@
       method: method,
       headers: { "Content-Type": "application/json" }
     };
+    var token = root.sessionStorage ? root.sessionStorage.getItem(ADMIN_KEY) : "";
+    if (token) options.headers["X-Admin-Password"] = token;
     if (payload) options.body = JSON.stringify(payload);
     return root.fetch(apiUrl(kind, id), options).then(function (response) {
       if (!response.ok) throw new Error("CRM API " + response.status);
       return response.json();
     });
+  }
+
+  function loginAdmin(password) {
+    var options = {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Admin-Password": password
+      }
+    };
+    return root.fetch(apiUrl("leads"), options).then(function (response) {
+      if (!response.ok) throw new Error("Invalid admin password");
+      root.sessionStorage.setItem(ADMIN_KEY, password);
+      return true;
+    });
+  }
+
+  function logoutAdmin() {
+    root.sessionStorage.removeItem(ADMIN_KEY);
   }
 
   function loadRemote(kind) {
@@ -133,6 +155,8 @@
     loadRemote: loadRemote,
     addRemote: addRemote,
     updateRemote: updateRemote,
-    removeRemote: removeRemote
+    removeRemote: removeRemote,
+    loginAdmin: loginAdmin,
+    logoutAdmin: logoutAdmin
   };
 })(typeof window !== "undefined" ? window : globalThis);

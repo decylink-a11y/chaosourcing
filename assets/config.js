@@ -428,8 +428,7 @@ window.I18N = {
     footer: {
       tagline: "可信工厂、透明报价、专业交付。",
       admin: "管理后台",
-      rights: "保留所有权利。",
-      credits: "部分演示图片来自 Wikimedia Commons 与 Unsplash。"
+      rights: "保留所有权利。"
     },
     admin: {
       title: "客户管理后台",
@@ -606,8 +605,7 @@ window.I18N = {
     footer: {
       tagline: "Trusted factories, transparent quotes, professional delivery.",
       admin: "Admin",
-      rights: "All rights reserved.",
-      credits: "Some demo images from Wikimedia Commons and Unsplash."
+      rights: "All rights reserved."
     },
     admin: {
       title: "Customer Management",
@@ -784,8 +782,7 @@ window.I18N = {
     footer: {
       tagline: "مصانع موثوقة وأسعار شفافة وتسليم احترافي.",
       admin: "لوحة الإدارة",
-      rights: "جميع الحقوق محفوظة.",
-      credits: "بعض الصور التجريبية من ويكيميديا كومنز وأُنسبلاش."
+      rights: "جميع الحقوق محفوظة."
     },
     admin: {
       title: "إدارة العملاء",

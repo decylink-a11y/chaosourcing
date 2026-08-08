@@ -65,6 +65,59 @@
     return Math.max(0, qty) * Math.max(0, unit);
   }
 
+  function apiUrl(kind, id) {
+    var base = (window.SITE_CONFIG && window.SITE_CONFIG.apiBase) || "";
+    var url = base + "/api/crm?kind=" + encodeURIComponent(kind);
+    if (id) url += "&id=" + encodeURIComponent(id);
+    return url;
+  }
+
+  function apiRequest(method, kind, payload, id) {
+    var options = {
+      method: method,
+      headers: { "Content-Type": "application/json" }
+    };
+    if (payload) options.body = JSON.stringify(payload);
+    return root.fetch(apiUrl(kind, id), options).then(function (response) {
+      if (!response.ok) throw new Error("CRM API " + response.status);
+      return response.json();
+    });
+  }
+
+  function loadRemote(kind) {
+    return apiRequest("GET", kind).then(function (body) {
+      return (body.data || []).map(function (row) {
+        var data = row.data || {};
+        var record = {};
+        Object.keys(data).forEach(function (key) {
+          record[key] = data[key];
+        });
+        record.id = row.id || record.id;
+        record.createdAt = record.createdAt || row.created_at;
+        record.updatedAt = row.updated_at;
+        return record;
+      });
+    });
+  }
+
+  function addRemote(kind, record) {
+    return apiRequest("POST", kind, record).then(function (body) {
+      return Object.assign({}, record, { id: body.id || record.id });
+    });
+  }
+
+  function updateRemote(kind, id, patch) {
+    return apiRequest("PATCH", kind, patch, id).then(function () {
+      return true;
+    });
+  }
+
+  function removeRemote(kind, id) {
+    return apiRequest("DELETE", kind, null, id).then(function () {
+      return true;
+    });
+  }
+
   if (typeof module !== "undefined" && module.exports) {
     module.exports = { uid: uid, exportCsv: exportCsv, computeQuote: computeQuote };
   }
@@ -76,6 +129,10 @@
     update: update,
     remove: remove,
     exportCsv: exportCsv,
-    computeQuote: computeQuote
+    computeQuote: computeQuote,
+    loadRemote: loadRemote,
+    addRemote: addRemote,
+    updateRemote: updateRemote,
+    removeRemote: removeRemote
   };
 })(typeof window !== "undefined" ? window : globalThis);

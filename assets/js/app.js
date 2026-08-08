@@ -394,6 +394,7 @@
         status: "new"
       };
       var saved = window.CRM.add("leads", record);
+      window.CRM.addRemote("leads", saved).catch(function () {});
       var success = document.getElementById("quoteSuccess");
       success.hidden = false;
       success.textContent = t("quote.success", currentLang) + saved.id;

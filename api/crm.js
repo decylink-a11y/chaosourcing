@@ -1,10 +1,14 @@
 const { createClient } = require("@supabase/supabase-js");
 const crypto = require("crypto");
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+  console.error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+}
+
+const supabase = createClient(supabaseUrl || "http://localhost", supabaseKey || "missing");
 
 function send(res, status, body) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -49,10 +53,16 @@ module.exports = async function handler(req, res) {
 
   if (req.method === "PATCH") {
     const id = req.query.id;
+    const { data: existing } = await supabase
+      .from("crm_records")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+    if (!existing) return send(res, 404, { error: "Record not found" });
     const { error } = await supabase
       .from("crm_records")
       .update({
-        data: req.body || {},
+        data: Object.assign({}, existing.data || {}, req.body || {}),
         updated_at: new Date().toISOString()
       })
       .eq("id", id);

@@ -27,8 +27,9 @@ window.SITE_CONFIG = {
     address: "Chouzhou north road no.120, Yiwu, Zhejiang, China"
   },
   seo: {
-    siteUrl: "https://www.yourdomain.com"
+    siteUrl: "https://chaosourcing.vercel.app"
   },
+  apiBase: "https://chaosourcing.vercel.app",
   video: {
     file: "assets/videos/promo-video.mp4",
     poster: "assets/images/scenic/scenic-2.jpg",
@@ -406,7 +407,7 @@ window.I18N = {
       message: "产品需求 / 图片编号 / 目标市场",
       submit: "提交询盘",
       success: "询盘已保存，编号：",
-      note: "提交后会自动进入本机客户管理系统。"
+      note: "提交后会自动进入在线客户管理系统。"
     },
     contact: {
       eyebrow: "Contact",
@@ -579,7 +580,7 @@ window.I18N = {
       message: "Product needs / photo numbers / target market",
       submit: "Send Inquiry",
       success: "Inquiry saved. ID: ",
-      note: "Submissions are stored in the local customer management system."
+      note: "Submissions are stored in the online customer management system."
     },
     contact: {
       eyebrow: "Contact",
@@ -752,7 +753,7 @@ window.I18N = {
       message: "احتياجات المنتج / أرقام الصور / السوق المستهدف",
       submit: "إرسال الاستفسار",
       success: "تم حفظ الاستفسار. الرقم: ",
-      note: "ستظهر البيانات تلقائيا في نظام إدارة العملاء المحلي."
+      note: "ستظهر البيانات تلقائيا في نظام إدارة العملاء عبر الإنترنت."
     },
     contact: {
       eyebrow: "اتصل",

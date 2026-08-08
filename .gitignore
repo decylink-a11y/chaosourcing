@@ -2,3 +2,6 @@ preview-*.png
 .server-pid
 node_modules/
 .env
+
+.vercel
+.env*

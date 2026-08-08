@@ -1,5 +1,6 @@
 (function () {
   var bound = false;
+  var state = { leads: [], quotes: [] };
 
   function getLang() {
     return localStorage.getItem("site_lang") || document.documentElement.lang || "en";
@@ -35,15 +36,15 @@
     return new Date(iso).toLocaleDateString();
   }
 
-  function renderStats() {
-    var leads = window.CRM.load("leads");
-    var quotes = window.CRM.load("quotes");
-    var newCount = leads.filter(function (lead) { return lead.status === "new"; }).length;
-    var wonCount = leads.filter(function (lead) { return lead.status === "won"; }).length;
+  function renderStats(leads, quotes) {
+    var leadsList = leads || state.leads;
+    var quotesList = quotes || state.quotes;
+    var newCount = leadsList.filter(function (lead) { return lead.status === "new"; }).length;
+    var wonCount = leadsList.filter(function (lead) { return lead.status === "won"; }).length;
     var stats = [
-      { value: leads.length, label: adminT("statsLeads") },
+      { value: leadsList.length, label: adminT("statsLeads") },
       { value: newCount, label: adminT("statsNew") },
-      { value: quotes.length, label: adminT("statsQuotes") },
+      { value: quotesList.length, label: adminT("statsQuotes") },
       { value: wonCount, label: adminT("statsWon") }
     ];
     document.getElementById("adminStats").innerHTML = stats.map(function (stat) {
@@ -51,12 +52,12 @@
     }).join("");
   }
 
-  function renderLeads() {
-    var leads = window.CRM.load("leads");
+  function renderLeads(leads) {
+    var leadsList = leads || state.leads;
     var table = document.getElementById("leadsTable");
     var empty = document.getElementById("leadsEmpty");
-    empty.hidden = leads.length > 0;
-    if (!leads.length) {
+    empty.hidden = leadsList.length > 0;
+    if (!leadsList.length) {
       table.querySelector("thead").innerHTML = "";
       table.querySelector("tbody").innerHTML = "";
       return;
@@ -65,7 +66,7 @@
     table.querySelector("thead").innerHTML = "<tr>" + headers.map(function (key) {
       return "<th>" + escapeHtml(adminT(key)) + "</th>";
     }).join("") + "</tr>";
-    table.querySelector("tbody").innerHTML = leads.map(function (lead) {
+    table.querySelector("tbody").innerHTML = leadsList.map(function (lead) {
       return "<tr>" +
         "<td>" + escapeHtml(lead.id) + "</td>" +
         "<td>" + escapeHtml(formatDate(lead.createdAt)) + "</td>" +
@@ -85,12 +86,12 @@
     }).join("");
   }
 
-  function renderQuotes() {
-    var quotes = window.CRM.load("quotes");
+  function renderQuotes(quotes) {
+    var quotesList = quotes || state.quotes;
     var table = document.getElementById("quotesTable");
     var empty = document.getElementById("quotesEmpty");
-    empty.hidden = quotes.length > 0;
-    if (!quotes.length) {
+    empty.hidden = quotesList.length > 0;
+    if (!quotesList.length) {
       table.querySelector("thead").innerHTML = "";
       table.querySelector("tbody").innerHTML = "";
       return;
@@ -99,7 +100,7 @@
     table.querySelector("thead").innerHTML = "<tr>" + headers.map(function (key) {
       return "<th>" + escapeHtml(adminT(key)) + "</th>";
     }).join("") + "</tr>";
-    table.querySelector("tbody").innerHTML = quotes.map(function (quote) {
+    table.querySelector("tbody").innerHTML = quotesList.map(function (quote) {
       var total = window.CRM.computeQuote(quote.quantity, quote.unitPrice);
       return "<tr>" +
         "<td>" + escapeHtml(quote.id) + "</td>" +
@@ -121,15 +122,28 @@
   }
 
   function render() {
-    renderStats();
-    renderLeads();
-    renderQuotes();
+    renderStats(state.leads, state.quotes);
+    renderLeads(state.leads);
+    renderQuotes(state.quotes);
+  }
+
+  function loadAndRender() {
+    var localLeads = window.CRM.load("leads");
+    var localQuotes = window.CRM.load("quotes");
+    Promise.all([
+      window.CRM.loadRemote("leads").catch(function () { return null; }),
+      window.CRM.loadRemote("quotes").catch(function () { return null; })
+    ]).then(function (results) {
+      state.leads = results[0] || localLeads;
+      state.quotes = results[1] || localQuotes;
+      render();
+    });
   }
 
   function downloadCsv() {
     var activePanel = document.querySelector(".admin-panel.active");
     var kind = activePanel && activePanel.id === "quotesPanel" ? "quotes" : "leads";
-    var records = window.CRM.load(kind);
+    var records = state[kind].length ? state[kind] : window.CRM.load(kind);
     var csv = window.CRM.exportCsv(records);
     if (!csv) return;
     var blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" });
@@ -151,7 +165,8 @@
   }
 
   function printQuote(id) {
-    var quote = window.CRM.load("quotes").find(function (item) { return item.id === id; });
+    var quote = state.quotes.find(function (item) { return item.id === id; }) ||
+      window.CRM.load("quotes").find(function (item) { return item.id === id; });
     if (!quote) return;
     var total = window.CRM.computeQuote(quote.quantity, quote.unitPrice).toFixed(2);
     var currency = quote.currency || "USD";
@@ -201,28 +216,36 @@
         notes: String(data.get("notes") || "").trim(),
         status: "quoted"
       };
-      window.CRM.add("quotes", record);
+      var saved = window.CRM.add("quotes", record);
+      state.quotes.unshift(saved);
       form.reset();
       render();
+      window.CRM.addRemote("quotes", saved).then(loadAndRender).catch(loadAndRender);
     });
 
     document.getElementById("leadsTable").addEventListener("change", function (event) {
       if (!event.target.matches("[data-lead-status]")) return;
-      window.CRM.update("leads", event.target.getAttribute("data-id"), { status: event.target.value });
+      var id = event.target.getAttribute("data-id");
+      var patch = { status: event.target.value };
+      window.CRM.update("leads", id, patch);
       render();
+      window.CRM.updateRemote("leads", id, patch).then(loadAndRender).catch(loadAndRender);
     });
 
     document.getElementById("leadsTable").addEventListener("click", function (event) {
       var button = event.target.closest("[data-lead-quote], [data-lead-delete]");
       if (!button) return;
       var id = button.getAttribute("data-id");
-      var lead = window.CRM.load("leads").find(function (item) { return item.id === id; });
+      var lead = state.leads.find(function (item) { return item.id === id; }) ||
+        window.CRM.load("leads").find(function (item) { return item.id === id; });
       if (button.hasAttribute("data-lead-quote") && lead) {
         showQuoteFromLead(lead);
       }
       if (button.hasAttribute("data-lead-delete") && confirm(adminT("deleteConfirm"))) {
         window.CRM.remove("leads", id);
+        state.leads = state.leads.filter(function (item) { return item.id !== id; });
         render();
+        window.CRM.removeRemote("leads", id).then(loadAndRender).catch(loadAndRender);
       }
     });
 
@@ -235,12 +258,14 @@
       }
       if (button.hasAttribute("data-quote-delete") && confirm(adminT("deleteConfirm"))) {
         window.CRM.remove("quotes", id);
+        state.quotes = state.quotes.filter(function (item) { return item.id !== id; });
         render();
+        window.CRM.removeRemote("quotes", id).then(loadAndRender).catch(loadAndRender);
       }
     });
 
     document.getElementById("exportCsv").addEventListener("click", downloadCsv);
-    document.getElementById("refreshAdmin").addEventListener("click", render);
+    document.getElementById("refreshAdmin").addEventListener("click", loadAndRender);
     document.getElementById("closePrint").addEventListener("click", function () {
       document.getElementById("printOverlay").hidden = true;
     });
@@ -251,6 +276,6 @@
       bindEvents();
       bound = true;
     }
-    render();
+    loadAndRender();
   };
 })();
